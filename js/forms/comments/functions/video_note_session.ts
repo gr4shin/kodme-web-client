@@ -67,6 +67,9 @@ export class VideoNoteSession {
     /** Флаг блокировки двойного запуска записи. */
     isStarting: boolean = false;
 
+    /** Защита от завершения запуска после отмены или закрытия формы. */
+    startToken = 0;
+
     /**
      * ***************************************************************************
      * Конструктор сессии записи.
@@ -110,6 +113,7 @@ export class VideoNoteSession {
 
         if (this.isStarting) return; // Блокировка двойного запуска
         this.isStarting = true;
+        const startToken = ++this.startToken;
 
         try {
 
@@ -123,8 +127,18 @@ export class VideoNoteSession {
             // Камера пишет в контейнер видео — без него стартовать не из чего
             if (!this.videoWrap) throw new Error("[video-note]: не найден контейнер видео");
 
-            await this.recorder.start(this.videoWrap);
+            // Панель должна быть видна и во время запроса разрешений/запуска
+            // камеры, а не только после первого события MediaRecorder.
             this.activateUI();
+            this.progress.setProcessing();
+            await this.recorder.start(this.videoWrap);
+            if (startToken !== this.startToken) {
+                this.recorder._cleanup();
+                return;
+            }
+            this.progress.stopProcessing();
+            if (this.recorder.isRecording) updateStateButtons(this.form);
+            else this.cancel();
 
         } catch (error) {
 
@@ -215,6 +229,8 @@ export class VideoNoteSession {
      * ***************************************************************************
      */
     cancel(): void {
+
+        ++this.startToken;
 
         if (this.recorder) {
             this.recorder.onTimeUpdate = null; // Убираем связь

@@ -38,7 +38,6 @@ import { emojiHandler } from "./handlers/emoji.js";
 import { onContentScrollHandler } from "./handlers/on_content_scroll.js";
 import { attachDocumentHandler } from "./handlers/attach_document.js";
 import { voiceNotePointerHandler } from "./handlers/voice_note_pointer.js";
-import { startStopVideoNoteRecordHandler } from "./handlers/start_stop_video_note_record.js";
 import { stopVideoNoteHandler } from "./handlers/stop_video_note.js";
 import { switchCameraVideoNoteHandler } from "./handlers/switch_camera_video_note.js";
 import { pauseResumeVideoNoteHandler } from "./handlers/pause_resume_video_note.js";
@@ -406,9 +405,8 @@ export class Messages {
             let createMessage = this.tpl.querySelector(":scope >.footer [action-create-message]");
             createMessage?.addEventListener("click", () => createMessageHandler(this));
 
-            // Запись голосового сообщения (тап — закреплённая запись,
-            // удержание + свайп вверх — отмена, повторное нажатие по микрофону — отмена)
-            let recordVoice = this.tpl.querySelector<HTMLElement>(":scope >.footer [action-voice-recorder]");
+            // Общая кнопка: тап переключает голос/видео, удержание записывает.
+            let recordVoice = this.tpl.querySelector<HTMLElement>(":scope >.footer [data-note-recorder]");
             if (recordVoice) voiceNotePointerHandler(this, recordVoice);
 
             // Отмена записи голосового сообщения (кнопка X на панели)
@@ -424,10 +422,6 @@ export class Messages {
             sendVoiceNote?.addEventListener("click", () => this.voiceNoteSession?.stop());
 
             // =========================
-
-            // Запись видео кружочка
-            let recordVideoNote = this.tpl.querySelector(":scope >.footer [action-video-recorder]");
-            recordVideoNote?.addEventListener("click", () => startStopVideoNoteRecordHandler(this));
 
             // Смена камеры в видео кружочке
             let switchCameraVideoNote = this.tpl.querySelector(":scope [action-video-note-switch-camera]");
@@ -817,7 +811,7 @@ export class Messages {
         }
 
         // Если идёт запись видео-кружочка — отменяем и освобождаем камеру
-        if (this.videoNoteRecorder?.recorder?.isRecording) {
+        if (this.videoNoteRecorder?.isStarting || this.videoNoteRecorder?.recorder?.isRecording) {
             this.videoNoteRecorder.cancel();
         }
 
@@ -884,9 +878,9 @@ export class Messages {
         // Получаем параметр Blur из настроек пользователя
         const isBlur = LocalStorage?.session?.settings?.user?.decorations?.blur || false;
 
-        // invariant: иконка "arrow-up" есть в справочнике — шаблон подсказки
+        // invariant: иконка "arrow-left" есть в справочнике — шаблон подсказки
         // жеста всегда получит разметку
-        const slideToCancelIcon = Icons.icon("arrow-up", { settings: { stroke: 2.5 } })!.outerHTML;
+        const slideToCancelIcon = Icons.icon("arrow-left", { settings: { stroke: 2.5 } })!.outerHTML;
 
         // Мы используем <template> tag или DOMParser для создания DOM без innerHTML
         return new DOMParser().parseFromString(`
@@ -951,8 +945,10 @@ export class Messages {
                             ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-emoji"], icon: "mood-smile" })}
                             ${Inputs.textarea({ intent: "transparent", placeholder: t("forms.messages.enter_message"), name: "message", rows: 1 })}
                             ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-attach-file"], icon: "Paperclip" })}
-                            ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-video-recorder"], icon: "Video" })}
-                            ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-voice-recorder"], classes: ["hidden"], icon: "microphone" })}
+                            <div data-note-recorder data-recording-mode="voice" class="flex shrink-0 select-none touch-none">
+                                ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-video-recorder"], classes: ["hidden"], icon: "Video" })}
+                                ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-voice-recorder"], icon: "microphone" })}
+                            </div>
                             ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-create-message"], classes: ["hidden"], icon: "send-2" })}
                             ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-cancel-edit"], classes: ["hidden"], icon: "X" })}
                             ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-update-message"], classes: ["hidden"], icon: "device-floppy" })}

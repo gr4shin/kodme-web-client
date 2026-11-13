@@ -47,7 +47,6 @@ import { dragAndDropFilesHandler } from "./handlers/drag_and_drop_files.js";
 import { textareaPasteBufferHandler } from "./handlers/textarea_paste_buffer.js";
 import { emojiHandler } from "./handlers/emoji.js";
 import { voiceNotePointerHandler } from "./handlers/voice_note_pointer.js";
-import { startStopVideoNoteRecordHandler } from "./handlers/start_stop_video_note_record.js";
 import { switchCameraVideoNoteHandler } from "./handlers/switch_camera_video_note.js";
 import { pauseResumeVideoNoteHandler } from "./handlers/pause_resume_video_note.js";
 import { stopVideoNoteHandler } from "./handlers/stop_video_note.js";
@@ -374,7 +373,7 @@ export class Comments {
 
             // Запись голосового комментария (тап — закреплённая запись,
             // удержание + свайп вверх — отмена, повторный тап — отмена)
-            let recordVoice = this.tpl.querySelector<HTMLElement>(":scope >.footer [action-voice-recorder]");
+            let recordVoice = this.tpl.querySelector<HTMLElement>(":scope >.footer [data-note-recorder]");
             if (recordVoice) voiceNotePointerHandler(this, recordVoice);
 
             // Отмена записи голосового (кнопка X на панели)
@@ -392,8 +391,6 @@ export class Comments {
             // =========================
 
             // Запись видео-кружка
-            let recordVideoNote = this.tpl.querySelector(":scope >.footer [action-video-recorder]");
-            recordVideoNote?.addEventListener("click", () => startStopVideoNoteRecordHandler(this));
 
             // Смена камеры в видео-кружке
             let switchCameraVideoNote = this.tpl.querySelector(":scope [action-video-note-switch-camera]");
@@ -617,7 +614,7 @@ export class Comments {
             this.voiceNoteSession?.cancel();
         }
 
-        if (this.videoNoteRecorder?.recorder?.isRecording) {
+        if (this.videoNoteRecorder?.isStarting || this.videoNoteRecorder?.recorder?.isRecording) {
             this.videoNoteRecorder.cancel();
         }
 
@@ -689,7 +686,7 @@ export class Comments {
     _template(): HTMLElement | null {
 
         // Иконка подсказки «свайп вверх — отмена» на панели голосового
-        const slideToCancelIcon = Icons.icon("arrow-up", { settings: { stroke: 2.5 } })?.outerHTML ?? "";
+        const slideToCancelIcon = Icons.icon("arrow-left", { settings: { stroke: 2.5 } })?.outerHTML ?? "";
 
         // Мы используем DOMParser для создания DOM без innerHTML
         return new DOMParser().parseFromString(`
@@ -752,8 +749,10 @@ export class Comments {
                             ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-emoji"], icon: "mood-smile" })}
                             ${Inputs.textarea({ intent: "transparent", placeholder: t("forms.comments.enter_comment"), name: "comment", rows: 1 })}
                             ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-attach-file"], icon: "Paperclip" })}
-                            ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-video-recorder"], icon: "Video" })}
-                            ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-voice-recorder"], icon: "microphone" })}
+                            <div data-note-recorder data-recording-mode="voice" class="flex shrink-0 select-none touch-none">
+                                ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-video-recorder"], classes: ["hidden"], icon: "Video" })}
+                                ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-voice-recorder"], icon: "microphone" })}
+                            </div>
                             ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-create-comment"], classes: ["hidden"], icon: "send-2" })}
                             ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-cancel-edit"], classes: ["hidden"], icon: "X" })}
                             ${Buttons.create({ intent: "transparent", shape: "circle", attributes: ["action-update-comment"], classes: ["hidden"], icon: "device-floppy" })}

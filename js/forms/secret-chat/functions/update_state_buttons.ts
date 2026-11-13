@@ -41,8 +41,10 @@ export function updateStateButtons(form: SecretChat): void {
         // Кнопки обязаны входить в футер шаблона
         if (!create || !update || !cancelEdit || !emoji || !attachFile || !voiceRecorder || !videoRecorder) return;
 
+        const isVideoMode = tpl.querySelector<HTMLElement>("[data-note-recorder]")?.dataset.recordingMode === "video";
+
         // 1. Если идёт запись звука
-        if (form.voiceRecorder) {
+        if (form.voiceRecorder || form.videoNoteRecorder?.recorder.isRecording) {
             // Во время записи оставляем поле ввода и кнопку микрофона видимыми,
             // чтобы футер не сжимался, а микрофон мог отменить запись.
             textarea.classList.remove("hidden");
@@ -51,8 +53,8 @@ export function updateStateButtons(form: SecretChat): void {
             cancelEdit.classList.add("hidden");
             emoji.classList.add("hidden");
             attachFile.classList.add("hidden");
-            voiceRecorder.classList.remove("hidden");
-            videoRecorder.classList.add("hidden");
+            voiceRecorder.classList.toggle("hidden", isVideoMode);
+            videoRecorder.classList.toggle("hidden", !isVideoMode);
             return;
         }
 
@@ -89,10 +91,9 @@ export function updateStateButtons(form: SecretChat): void {
             videoRecorder.classList.add("hidden");
         } else {
 
-            // Пустое поле — доступны обе записи (в т.ч. после завершения
-            // предыдущей, когда видеокнопка оставалась скрытой)
-            voiceRecorder.classList.remove("hidden");
-            videoRecorder.classList.remove("hidden");
+            // Пустое поле — показываем выбранный режим записи.
+            voiceRecorder.classList.toggle("hidden", isVideoMode);
+            videoRecorder.classList.toggle("hidden", !isVideoMode);
             create.classList.add("hidden");
             emoji.classList.remove("hidden");
         }

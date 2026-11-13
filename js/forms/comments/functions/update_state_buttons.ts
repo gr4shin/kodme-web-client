@@ -42,19 +42,21 @@ export function updateStateButtons(form: Comments): void {
         // Без textarea и футера нечего обновлять
         if (!textarea) return;
 
+        const isVideoMode = form.tpl?.querySelector<HTMLElement>("[data-note-recorder]")?.dataset.recordingMode === "video";
+
         // ---------- ИДЁТ ЗАПИСЬ ГОЛОСОВОГО ----------
 
         // Во время записи оставляем поле ввода и кнопку микрофона видимыми,
         // чтобы футер не сжимался, а микрофон мог отменить запись
-        if (form.voiceRecorder) {
+        if (form.voiceRecorder || form.videoNoteRecorder?.recorder.isRecording) {
             textarea.classList.remove("hidden");
             createButton?.classList.add("hidden");
             updateButton?.classList.add("hidden");
             cancelEditButton?.classList.add("hidden");
             emojiButton?.classList.add("hidden");
             attachFileButton?.classList.add("hidden");
-            voiceRecorderButton?.classList.remove("hidden");
-            videoRecorderButton?.classList.add("hidden");
+            voiceRecorderButton?.classList.toggle("hidden", isVideoMode);
+            videoRecorderButton?.classList.toggle("hidden", !isVideoMode);
             return;
         }
 
@@ -92,8 +94,8 @@ export function updateStateButtons(form: Comments): void {
 
             // Голос/кружок — только при пустом черновике (иначе старт записи
             // перетащил бы текст/вложения в заметку)
-            voiceRecorderButton?.classList.toggle("hidden", hasTextOrAttaches);
-            videoRecorderButton?.classList.toggle("hidden", hasTextOrAttaches);
+            voiceRecorderButton?.classList.toggle("hidden", hasTextOrAttaches || isVideoMode);
+            videoRecorderButton?.classList.toggle("hidden", hasTextOrAttaches || !isVideoMode);
 
             // Эмодзи/скрепка доступны всегда (кроме редактирования)
             emojiButton?.classList.remove("hidden");

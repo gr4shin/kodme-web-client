@@ -451,7 +451,7 @@ export class MessageItem {
             // Проверяем через нормализатор: у temp/pending сообщений attachments —
             // объект-мап, и `.length` у него undefined, из-за чего статус
             // оставался в пустом text-wrap.
-            if (Attachments.isNotEmpty(this.data?.attachments) && !data.text) {
+            if (Attachments.isNotEmpty(this.data?.attachments) && !data.text?.trim()) {
                 this.attaches.appendChild(this.status);
             }
 

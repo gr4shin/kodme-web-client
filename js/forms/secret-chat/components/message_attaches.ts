@@ -31,6 +31,17 @@ export function messageAttaches(message: SecretChatMessageItem): void {
 
     try {
 
+        // Полноразмерный пузырь только для фото/видео без подписи.
+        const mediaAttachments = normalizeAttachments(message.data.attachments ?? []);
+        const isMediaOnly = !message.data.text?.trim()
+            && mediaAttachments.length > 0
+            && mediaAttachments.every(attachment => {
+                const type = AttachClassifier.classify(attachment);
+                return type === AttachClassifier.ATTACH_TYPES.IMAGE
+                    || type === AttachClassifier.ATTACH_TYPES.VIDEO;
+            });
+        message.element.classList.toggle("media-only", isMediaOnly);
+
         // Определяем контейнеры
         let attachesContainer = message.element.querySelector(":scope attaches");
 

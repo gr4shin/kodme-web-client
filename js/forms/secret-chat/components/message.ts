@@ -253,7 +253,7 @@ export class SecretChatMessageItem {
             }
 
             // Есть вложение без текста — статус уходит в attaches (фаза вложений)
-            if (data.file_id && !data.text) {
+            if (data.file_id && !data.text?.trim()) {
                 this.attaches.appendChild(this.status);
             }
 
